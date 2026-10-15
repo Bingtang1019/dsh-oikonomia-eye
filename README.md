@@ -10,8 +10,8 @@
 > **本轮（前移轮）实测**：`typecheck` **0 错**（此前 75）、`test` **75 过 / 2 挂**（此前 32 过 / 45 挂）、
 > `lint` 与 `peers:assert` 通过、`build` **含声明**首次通过、`check-pack` 对真 tarball 全 PASS。
 > 源码原本写在本仓旧基线 `0.1.1-rc.2` 上，本轮把四条 API 分歧前移到已发布线；**前移只在包内做，不改判据语义**。
-> **仍然未做到的一项**是 declaration merging 对消费方可见（`tsup` 会丢掉两处 `declare module`，见
-> [RISKS.md](RISKS.md) R8）。第二条残留是 2 个失败用例（1 个是读数定义问题、1 个是上游 `agent-spine` 未发布到区间内），
+> **declaration merging 对消费方可见已解决**：`tsup` 会丢掉两处 `declare module`，构建后由 `scripts/inject-augments.mjs`
+> 把它们逐字节注入消费方必然加载的 `dsh/index.d.ts`（正例 + 负例双证见 [RISKS.md](RISKS.md) R8.5）。残留是 2 个失败用例（1 个是读数定义问题、1 个是上游 `agent-spine` 未发布到区间内），
 > 见 [RISKS.md](RISKS.md) R10。四条分歧的发布线证据见[与 monorepo 源码面的一致性说明](#与-monorepo-源码面的一致性说明)。
 > 依赖勘定见 [DEPENDENCIES.md](DEPENDENCIES.md)。
 
