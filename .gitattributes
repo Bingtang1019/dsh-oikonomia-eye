@@ -1,0 +1,11 @@
+# Criterion entry tables are stamped data whose layout is part of the tool's
+# contract (the stamp sits directly after the entry's `source:` line); never let
+# a merge tool rewrite one.
+**/entries.yaml merge=ours
+**/entries.yaml diff
+
+*.tgz binary
+
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf

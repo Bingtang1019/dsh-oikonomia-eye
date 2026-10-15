@@ -1,0 +1,35 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Built plugin half. `dsh/` is a build artifact here, not a source directory: the
+# sources live in src/ and tsup emits dsh/index.js + dsh/invariant.js. The kit
+# ships both in the tarball (see package.json `files`) but never commits them.
+dsh/
+
+# Packing output
+*.tgz
+pack/
+
+# Local environment
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+
+# Secrets and local credentials: the DSH credentials file and provider keys stay
+# outside this repository.
+*.pem
+*.key
+*.pfx
+*.p12
+.credentials.yaml
+*credentials*.yaml
+*credentials*.yml
+
+# Deployment inputs exercised by hand. A deployment's vocabulary, entry table and
+# corpus are inputs, not package sources: point config at them, do not commit them.
+local/
+fixtures/_scratch/

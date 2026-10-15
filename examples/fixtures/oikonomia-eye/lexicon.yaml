@@ -1,0 +1,7 @@
+version: 1
+# Two shapes: one counting family (S7) and one condition-checkable family (S9).
+shapes:
+  - id: S7
+    trigger: [补丁, 整段]
+  - id: S9
+    trigger: [校验, 消费方]

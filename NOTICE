@@ -1,0 +1,13 @@
+dsh-oikonomia-eye — notices
+
+- This package is extracted from the deepseek-harness monorepo, where it is the
+  private workspace `@deepseek-ai/dsh-experimental-oikonomia-eye`
+  (packages/experimental/oikonomia-eye). The monorepo is the source of record
+  until the extraction lands here; EXTRACTION-PLAN.md records what was copied,
+  what is rewritten and what is dropped.
+- No third-party code is vendored in this repository. The runtime dependencies
+  (@deepseek-ai/schemastery, @deepseek-ai/cordis, the @deepseek-ai/dsh-* peer
+  packages and yaml) are consumed from npm and keep their own licences.
+- The reference gate this package's shape rules align with, `shape_gate.py`
+  (identifier `shape-gate/1`), lives in the author's coordination checkout, not
+  here; README.md cites it as the alignment reference instead of copying it.

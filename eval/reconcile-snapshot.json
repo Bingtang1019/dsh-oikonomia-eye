@@ -1,0 +1,20 @@
+{
+  "gate": {
+    "path": "C:\\Users\\dell\\tools\\coord\\eval\\audit_reconcile.py",
+    "sha256_16": "679da1ca42b3031f"
+  },
+  "python": "C:\\Users\\dell\\tools\\coord\\venv\\Scripts\\python.exe",
+  "gateExitCode": 0,
+  "artifact": {
+    "path": "C:\\Users\\dell\\tools\\coord\\eval\\audit_reconcile.json",
+    "sha256_16": "8c6d8c8428fe937b"
+  },
+  "artifactSummary": {
+    "checks": 28,
+    "passed": 28,
+    "failed": 0,
+    "skippedNested": 0,
+    "runMode": "top-level",
+    "ledgerPath": "eval/m1_freeze_fingerprints.json"
+  }
+}

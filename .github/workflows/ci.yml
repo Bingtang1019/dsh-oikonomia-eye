@@ -1,0 +1,137 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19'
+          cache: pnpm
+
+      # `auto-install-peers=false` (.npmrc): peer dependencies are not installed
+      # implicitly, so this step is what materializes the @deepseek-ai/* set the
+      # devDependencies pin. A missing peer fails here, not at test time.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Lint
+        run: pnpm run lint
+
+      # The peer ranges are asserted as data: eight versions the rc OR-chain must
+      # accept or reject. CI's inline check below covers only "accepts the runtime
+      # line being installed"; this covers the rejects too, which is the half that
+      # catches a range that silently accepts everything.
+      - name: Assert peer ranges
+        run: pnpm run peers:assert
+
+      # The entry-table stamping tool is the criterion library's content-hash
+      # gate; its two properties (idempotence, --check without writing) are a
+      # test, so the unit suite covers it.
+      - name: Unit tests
+        run: pnpm run test
+
+      # `dsh/` is a build output, never committed: this step is what makes the pack
+      # check below meaningful. It also builds the declarations, which carry the
+      # declaration merging this package contributes to two host type maps.
+      - name: Build the plugin half
+        run: pnpm run build
+
+      - name: Pack smoke check
+        run: pnpm run check-pack
+
+  # The plugin must stay installable on every supported DSH line. Each leg packs
+  # the plugin, installs the pinned runtime, and proves two things the test job
+  # cannot: that the tarball's `exports` resolves from a real consumer, and that
+  # the declared peer range accepts the runtime line being installed.
+  dsh-compat:
+    name: dsh-compat (${{ matrix.dsh }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dsh: 0.1.7-rc.2
+          - dsh: 0.2.0-rc.2
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.19'
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the plugin half
+        run: pnpm run build
+
+      - name: Pack the plugin
+        run: npm pack --pack-destination "$RUNNER_TEMP"
+
+      # Install the pinned line and let the tarball resolve against it. The peer
+      # packages are declared peers, not dependencies, so the runtime is what
+      # supplies them.
+      - name: Install the pinned DSH runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/dsh-${{ matrix.dsh }}"
+          cd "$RUNNER_TEMP/dsh-${{ matrix.dsh }}"
+          npm init -y >/dev/null
+          npm install --no-audit --no-fund "@deepseek-ai/dsh@${{ matrix.dsh }}"
+
+      # The acceptance criterion of this leg, as data: the manifest's own peer
+      # ranges must accept the runtime line installed above. `semver` comes from
+      # the runtime install, so no extra tooling is introduced.
+      - name: Peer range accepts this runtime
+        env:
+          RUNTIME: ${{ runner.temp }}/dsh-${{ matrix.dsh }}
+          EXPECT: ${{ matrix.dsh }}
+        run: |
+          node --input-type=module --eval '
+            import { readFileSync } from "node:fs"
+            import semver from "semver"
+            const manifest = JSON.parse(readFileSync("package.json", "utf8"))
+            const range = manifest.peerDependencies["@deepseek-ai/dsh-session"]
+            if (!semver.satisfies(process.env.EXPECT, range)) {
+              console.error(`peer range rejects ${process.env.EXPECT}: ${range}`)
+              process.exit(1)
+            }
+            console.log(`peer range accepts ${process.env.EXPECT}`)
+          '
+
+      # Install the packed tarball beside the pinned runtime and import the
+      # plugin entry through the package name — the resolution a DSH profile
+      # performs. The glob is expanded in Node, not by the runner's shell.
+      - name: Profile smoke
+        env:
+          RUNTIME: ${{ runner.temp }}/dsh-${{ matrix.dsh }}
+          PACKED: ${{ runner.temp }}
+        run: node scripts/dsh-profile-smoke.mjs

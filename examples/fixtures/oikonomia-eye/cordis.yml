@@ -1,0 +1,40 @@
+# Package-owned test composition for dsh-oikonomia-eye.
+# The fixture plugin supplies a scripted adapter and three probe tools, so the
+# suite exercises the real Loader path with no model and no network. The
+# deployment files are addressed through DSH_OIKONOMIA_EYE_FIXTURES because the
+# composition runs from a temporary working directory.
+
+- id: oikonomia-eye-fixture
+  name: './oikonomia-eye-fixture.ts'
+
+- id: oikonomia-eye
+  name: 'dsh-oikonomia-eye'
+  config:
+    lexiconPath: !!js process.env.DSH_OIKONOMIA_EYE_FIXTURES + '/lexicon.yaml'
+    entriesPath: !!js process.env.DSH_OIKONOMIA_EYE_FIXTURES + '/entries.yaml'
+    corpusPath: !!js process.env.DSH_OIKONOMIA_EYE_FIXTURES + '/corpus'
+
+# The meter prices each round's model-visible text, so the suite can assert the
+# audit path rather than the unavailable-source path.
+- id: token-meter
+  name: '@deepseek-ai/dsh-token-meter'
+
+- id: agent-spine
+  name: '@deepseek-ai/dsh-agent-spine-demo'
+  config:
+    agents:
+      - id: main
+        provider: oikonomia-eye-fixture
+        model: oikonomia-eye-fixture
+        cwd: !!js process.cwd()
+    workspaceContext: false
+    persona: 'Follow the criteria that appear in the conversation.'
+
+- id: persistence
+  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  config:
+    root: !!js process.env.DSH_OIKONOMIA_EYE_SESSIONS || './.sessions'
+    compression: 'none'
+
+- id: checkpoint-policy
+  name: '@deepseek-ai/dsh-session-checkpoint-policy'

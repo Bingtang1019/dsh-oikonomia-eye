@@ -1,0 +1,8 @@
+# dsh bundle layer: mount The Eye of Oikonomia (dsh/index.js via the package root
+# export). The plugin reads its deployment's shape vocabulary, criterion entry
+# table and corpus from `config` and installs the `agent/pre-step` listener, the
+# three mid-turn checkpoints and the author's entry command. It has no client
+# half, so this bundle inserts one row and nothing else.
+- insert:
+    - id: oikonomia-eye
+      name: 'dsh-oikonomia-eye'

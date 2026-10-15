@@ -1,0 +1,25 @@
+entries:
+  - id: crit-patch
+    shape: S7
+    text: 补丁超过两次 ⇒ 停止打补丁、整段重写。
+    source: 纪律.md:41
+    sha256_16: e8e90c1a709d3018
+    guard:
+      layer: post-execute
+      scope: { tools: [patch-probe] }
+      minRepeat: 2
+  - id: crit-verify
+    shape: S9
+    text: 跑之前先读一遍调用点。
+    source: 纪律.md:52
+    sha256_16: a85a612a902744b4
+    guard:
+      layer: pre-execute
+      scope: { tools: [run-probe] }
+      condition: { kind: requires, tools: [read-probe] }
+  - id: crit-resident
+    shape: S9
+    text: 每一步都先确认：这一步的动作与当前目标一致。
+    source: 纪律.md:60
+    sha256_16: 878053f8a080f9c7
+    resident: true
