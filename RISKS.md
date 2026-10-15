@@ -572,3 +572,24 @@ augment 复制进去会引入未定义名，因此**只注入包根**。组合�
 | `package.json` 的 `repository`/`homepage`/`bugs` | 定稿，无"待作者确认"字样；三项值见 R9 表 |
 | REPO 零写入 | 本轮开始与结束都只跑只读 `git status`/`git log`；`packages/experimental/oikonomia-eye` 仍是 **11 个 `M` + 3 个 `??`**（共 15 行，与前一轮同数），HEAD 仍是 `8291ac51a1b32717f050dd694d24fec76ae4d39e`（未变）；**未 `commit`、未 `push`、未跑任何 git 网络命令** |
 
+## R11 —— 首次发布：新包名的 `0.0.0-stage` 占位版本会被误读成"待批准"
+
+**事实（registry 原文，2026-10-15）**：
+
+| 项 | 值 |
+|---|---|
+| 包创建 | `time.created = 2026-10-15T20:51:22.083Z`，版本 `0.0.0-stage`（`stub: true`，`description: "Temporary package placeholder for staged publishing"`，2 个文件 / 339 B） |
+| 真版本落地 | `time["0.1.0"] = 2026-10-15T20:52:19.728Z` ⇒ **占位后约 57 秒** |
+| 真版本元数据 | `_npmVersion = 11.16.0`、`_nodeVersion = 24.21.0`、`_npmUser.name = bingtang1019`、`dist.shasum = dcf181d024593aeee3e8bbde9f63ed9785a6cd04`（与本地 tarball 逐字节相同） |
+
+**陷阱**：在占位版本出现、真版本尚未落地的这段窗口里查 registry，会读到"包已存在但没有你的版本"，而 `GET /-/stage` 同时返回 `{"items":[],"total":0}`。这两个读数合起来**看起来像**"npm 把这次发布转成了暂存发布、需要账号拥有者批准"。本 kit 的首次发布就是这样被误判的：执行者在 `20:51:23` 查了一次（**比真版本早 56 秒**）就把结论定成"待作者批准"，并据此要求作者去网页批准——**那个闸门并不存在**。
+
+**判据（下次怎么避免）**：
+
+- 首发之后**至少等 60 秒再复查** `dist-tags` 与 `versions`；占位期间不要下"需要批准"的结论。
+- `GET /-/stage` 为**空**既不能证明"没有暂存"，也不能证明"需要批准"——它不是发布状态的判据。
+- `_nodeVersion` 是"这次上传由哪条工具链执行"的硬证据：本 kit 用 `node v24.21.0` + `npm 11.16.0`；作者本机的 node 是 `24.18.1`，若由作者本机发布，该字段不会是这个值。
+- **发布权在 token 里，不在网页的按钮上**：一把有发布权的 token 执行一条 `npm publish` 即完成上传，中间没有任何人工闸门。因此发布用 token 必须限权、只用于发布、用完即吊销。
+
+**发布行为的正式记录**：`dsh-oikonomia-eye@0.1.0` 由执行者用作者提供的 token 发布（`_npmUser = bingtang1019`），发布的 tarball 与本地 kit 产物 **`cmp -s` 逐字节相同**，`dist-tags.latest = 0.1.0`。作者侧不需要任何操作。
+
